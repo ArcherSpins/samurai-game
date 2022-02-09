@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <style>
+        body {
+            position: fixed;
+            left: 0; top: 0; right: 0; bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            max-width: 320px;
+            max-height: 600px;
+            background-image: url(./trava-na-fone-neba.jpg);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background-color: rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.753);
+            border-radius: 3px;
+        }
+
+        .modal-content img {
+            width: 100px;
+            height: 120px;
+        }
+
+        .modal-content button {
+            border: none;
+            background-color: rgb(99, 158, 9);
+            color: white;
+            border-radius: 5px;
+            font-size: 18px;
+            margin-top: 10px;
+            display: block;
+            width: 100%;
+        }
+
+        .modal-content button:active {
+            background-color: rgb(45, 223, 45);
+        }
+
+        .danger {
+            color: red;
+            display: none;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="modal">
+        <div class="modal-content">
+            <img src="./enemy.png" />
+            <p class="danger"></p>
+            <button class="start">Начать игру!</button>
+        </div>
+    </div>
+
+    <canvas id="canvas">
+
+    </canvas>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        const modal = document.querySelector(".modal")
+
+        const bg = new Image();
+        const samurai = new Image();
+
+        bg.src = './trava-na-fone-neba.jpg';
+        samurai.src = './samurai-removebg-preview.png';
+
+        let isJumping = false;
+
+        let enemies = [];
+
+        let money = []
+
+        let started = false
+
+        let score = 0;
+
+        let timer = 0;
+
+        const defaultPositions = {
+            one: {
+                x: 0,
+                y: 0,
+            },
+            two: {
+                x: canvas.clientWidth,
+                y: 0
+            }
+        };
+
+        const defaultPositionsPlayer = {
+            x: 50,
+            y: canvas.clientHeight - 500,
+            width: 65,
+            height: 20
+        }
+
+        const positionsBg = {
+            one: {
+                x: 0,
+                y: 0,
+            },
+            two: {
+                x: canvas.clientWidth,
+                y: 0
+            }
+        }
+
+
+        const positionsPlayer = {
+            x: 50,
+            y: canvas.clientHeight - 500,
+            width: 65,
+            height: 20
+        }
+
+        function jump() {
+            isJumping = !isJumping;
+        }
+
+        document.addEventListener('click', () => {
+            jump()
+        })
+
+        function renderScore() {
+            ctx.fillStyle = 'white';
+            ctx.font = '14px Arial';
+            ctx.fillText('Очки: ' + score, 6, 12);
+        }
+
+        function createEnemy() {
+            const image = new Image();
+
+            image.src = './enemy.png';
+
+            let y = Math.floor(Math.random() * canvas.clientHeight) - 200;
+
+            if (y > positionsPlayer.y) {
+                y = positionsPlayer.y
+            }
+
+            const enemy = {
+                image,
+                id: Date.now() + Math.random(),
+                speed: Math.floor(Math.random() * 3),
+                x: canvas.clientWidth + 300,
+                y,
+                width: 30,
+                height: 10
+            }
+
+            enemies.push(enemy);
+        }
+
+        function createMoney() {
+            const image = new Image();
+
+            image.src = './ca8800be0d31c755b41d9427524e5c84.png';
+
+            let y = Math.floor(Math.random() * canvas.clientHeight) - 200;
+
+            if (y > positionsPlayer.y) {
+                y = positionsPlayer.y
+            }
+
+
+            const moneyCoin = {
+                image,
+                id: Date.now() + Math.random(),
+                speed: Math.floor(Math.random() * 3),
+                x: canvas.clientWidth + 100,
+                y,
+                width: 30,
+                height: 10
+            }
+
+            money.push(moneyCoin);
+        }
+
+        function renderMoney() {
+            if (timer % 150 === 0) {
+                createMoney()
+            }
+
+            money.forEach(moneyCoin => {
+                if (moneyCoin.x < -100) {
+                    money.deleted = true
+                }
+
+                ctx.drawImage(moneyCoin.image, moneyCoin.x, moneyCoin.y, moneyCoin.width, moneyCoin.height);
+
+                if (positionsPlayer.x + positionsPlayer.width >= moneyCoin.x && positionsPlayer.x < moneyCoin.x + moneyCoin.width &&
+                    positionsPlayer.y <= moneyCoin.y && positionsPlayer.y + positionsPlayer.height >= moneyCoin.y + moneyCoin.height
+                ) {
+                    moneyCoin.deleted = true
+                    score++;
+                }
+
+                moneyCoin.x -= moneyCoin.speed;
+            })
+        }
+
+        function renderEnemy() {
+            timer++
+            if (timer % 350 === 0) {
+                createEnemy()
+            }
+
+            enemies.forEach(enemy => {
+                if (enemy.x < -100) {
+                    enemy.deleted = true
+                }
+
+                ctx.drawImage(enemy.image, enemy.x, enemy.y, enemy.width, enemy.height);
+
+                if (positionsPlayer.x + positionsPlayer.width >= enemy.x && positionsPlayer.x < enemy.x + enemy.width &&
+                    positionsPlayer.y <= enemy.y && positionsPlayer.y + positionsPlayer.height >= enemy.y + enemy.height
+                ) {
+                    enemy.deleted = true
+                    started = false
+                    const textDanger = document.querySelector('.danger');
+                    textDanger.style.display = 'block';
+                    textDanger.innerText = 'Ха-ха-ха лилипут заработал: ' + score
+                    modal.style.display = 'flex';
+
+                    enemies = [];
+                    money = [];
+                    timer = 0;
+                    score = 0;
+
+                    positionsBg = JSON.parse(JSON.stringify(defaultPositions))
+                    positionsPlayer = JSON.parse(JSON.stringify(defaultPositionsPlayer))
+                }
+
+                enemy.x -= enemy.speed;
+            })
+        }
+
+        function updateRenderBg() {
+            positionsBg.one.x--;
+            positionsBg.two.x--;
+
+            if (positionsBg.one.x + canvas.clientWidth <= 0) {
+                positionsBg.one.x = canvas.clientWidth;
+            }
+
+            if (positionsBg.two.x + canvas.clientWidth <= 0) {
+                positionsBg.two.x = canvas.clientWidth;
+            }
+        }
+
+        function renderPlayer() {
+            if(isJumping && positionsPlayer.y > canvas.clientHeight - 600) {
+                positionsPlayer.y -= 1.5;
+            }
+
+            if(!isJumping && positionsPlayer.y < canvas.clientHeight - 500) {
+                positionsPlayer.y += 1.5;
+            }
+
+            ctx.drawImage(samurai, positionsPlayer.x, positionsPlayer.y, positionsPlayer.width, positionsPlayer.height);
+        }
+
+        function renderBg() {
+            enemies = enemies.filter(item => !item.deleted)
+            money = money.filter(item => !item.deleted)
+
+            ctx.drawImage(bg, 0, 0, 1920, 5000, positionsBg.one.x, positionsBg.one.y, canvas.clientWidth, canvas.clientHeight);
+            ctx.drawImage(bg, 0, 0, 1920, 5000, positionsBg.two.x, positionsBg.two.y, canvas.clientWidth, canvas.clientHeight);
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight)
+            renderBg()
+            renderPlayer()
+            renderEnemy();
+            renderMoney()
+
+            renderScore();
+        }
+
+        function update() {
+            updateRenderBg()
+        }
+
+        function start() {
+            if (started) {
+                render();
+                update()
+            }
+            
+            requestAnimationFrame(start)
+        }
+        
+        document.querySelector('button.start').addEventListener('click', () => {
+            modal.style.display = 'none'
+            started = true
+            canvas.style.background = 'none'
+            start()
+        });
+
+
+    </script>
+</body>
+</html>
